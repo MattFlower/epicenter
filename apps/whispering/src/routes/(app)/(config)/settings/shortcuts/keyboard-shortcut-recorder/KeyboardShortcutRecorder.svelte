@@ -18,7 +18,7 @@
 
 	const {
 		title,
-		placeholder = 'Press a key combination',
+		placeholder = 'Press a key or mouse button',
 		autoFocus = true,
 		rawKeyCombination,
 		keyRecorder,
@@ -127,8 +127,8 @@
 						}}
 						tabindex="0"
 						aria-label={keyRecorder.isListening
-							? 'Recording keyboard shortcut'
-							: 'Click to record keyboard shortcut'}
+							? 'Recording shortcut'
+							: 'Click to record shortcut'}
 					>
 						<div class="flex w-full items-center justify-between">
 							<div
@@ -155,7 +155,7 @@
 								aria-live="polite"
 							>
 								<div class="flex flex-col items-center gap-1 px-4 py-2">
-									<p class="text-sm font-medium">Press key combination</p>
+									<p class="text-sm font-medium">Press key or mouse button</p>
 									<p class="text-xs text-muted-foreground">Esc to cancel</p>
 								</div>
 							</div>

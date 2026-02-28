@@ -53,6 +53,7 @@ regex = "1"
 rayon = "1.10"
 log = "0.4"
 tauri-plugin-log = "2"
+rdev = { git = "https://github.com/fufesou/rdev" }
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.29", features = ["signal"] }

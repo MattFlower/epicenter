@@ -31,6 +31,8 @@
 			`${CommandOrAlt.toLowerCase()}+s`,
 			'f5',
 			`control+${CommandOrAlt.toLowerCase()}+delete`,
+			'mouse3',
+			'control+mouse4',
 		],
 		global: [
 			'Space',
@@ -39,6 +41,8 @@
 			`${CommandOrAlt}+S`,
 			'F5',
 			`Control+${CommandOrAlt}+Delete`,
+			'mouse3',
+			'control+mouse4',
 		],
 	} as const;
 </script>

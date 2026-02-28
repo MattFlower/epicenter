@@ -28,4 +28,10 @@ export {
 	OPTION_DEAD_KEYS,
 } from './macos-option-key-map';
 export { CommandOrAlt, CommandOrControl } from './modifiers';
+export {
+	isMouseToken,
+	mouseButtonToToken,
+	shortcutContainsMouse,
+	tokenToMouseButton,
+} from './mouse';
 export { FUNCTION_KEY_PATTERN } from './patterns';

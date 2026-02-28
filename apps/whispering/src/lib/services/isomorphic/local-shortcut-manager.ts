@@ -4,9 +4,11 @@ import { createTaggedError } from 'wellcrafted/error';
 import { Ok, type Result } from 'wellcrafted/result';
 import type { ShortcutEventState } from '$lib/commands';
 import {
+	isMouseToken,
 	isSupportedKey,
 	type KeyboardEventPossibleKey,
 	type KeyboardEventSupportedKey,
+	mouseButtonToToken,
 	normalizeOptionKeyCharacter,
 } from '$lib/constants/keyboard';
 import { IS_MACOS } from '$lib/constants/platform';
@@ -180,6 +182,78 @@ export const LocalShortcutManagerLive = {
 		});
 
 		/**
+		 * Handle mousedown events - adds mouse button token to pressed state
+		 * and triggers 'Pressed' shortcuts, same pattern as keydown.
+		 */
+		const mousedown = on(window, 'mousedown', (e) => {
+			if (isTypingInInput()) return;
+
+			const token = mouseButtonToToken(
+				e.button,
+			) as KeyboardEventSupportedKey;
+
+			if (!pressedKeys.includes(token)) pressedKeys.push(token);
+
+			for (const [
+				id,
+				{ callback, keyCombination, on },
+			] of shortcuts.entries()) {
+				if (!arraysMatch(pressedKeys, keyCombination)) continue;
+
+				e.preventDefault();
+
+				if (!activeShortcuts.has(id) && on.includes('Pressed')) {
+					activeShortcuts.add(id);
+					callback('Pressed');
+				}
+			}
+		});
+
+		/**
+		 * Handle mouseup events - removes mouse button token from pressed state
+		 * and triggers 'Released' shortcuts, same pattern as keyup.
+		 */
+		const mouseup = on(window, 'mouseup', (e) => {
+			if (isTypingInInput()) return;
+
+			const token = mouseButtonToToken(
+				e.button,
+			) as KeyboardEventSupportedKey;
+
+			// Check for 'Released' shortcuts BEFORE removing the token
+			for (const [
+				id,
+				{ callback, keyCombination, on },
+			] of shortcuts.entries()) {
+				if (!arraysMatch(pressedKeys, keyCombination)) continue;
+				if (activeShortcuts.has(id) && on.includes('Released')) {
+					e.preventDefault();
+					callback('Released');
+					activeShortcuts.delete(id);
+				}
+			}
+
+			pressedKeys = pressedKeys.filter((k) => k !== token);
+
+			if (pressedKeys.length === 0) {
+				activeShortcuts.clear();
+			}
+		});
+
+		/**
+		 * Suppress the context menu when any registered shortcut uses mouse2 (right-click).
+		 */
+		const contextmenu = on(window, 'contextmenu', (e) => {
+			const hasRightClickShortcut = Array.from(shortcuts.values()).some(
+				({ keyCombination }) =>
+					keyCombination.some((k) => isMouseToken(k)),
+			);
+			if (hasRightClickShortcut) {
+				e.preventDefault();
+			}
+		});
+
+		/**
 		 * Handle window blur events (switching applications, clicking outside browser)
 		 * Reset all keys when user shifts focus away from the window
 		 */
@@ -203,6 +277,9 @@ export const LocalShortcutManagerLive = {
 		return () => {
 			keydown();
 			keyup();
+			mousedown();
+			mouseup();
+			contextmenu();
 			blur();
 			visibilityChange();
 		};

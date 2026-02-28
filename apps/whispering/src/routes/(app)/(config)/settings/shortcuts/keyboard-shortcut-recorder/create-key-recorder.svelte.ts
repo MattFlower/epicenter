@@ -2,6 +2,7 @@ import type { KeyboardEventSupportedKey } from '$lib/constants/keyboard';
 import type { PressedKeys } from '$lib/utils/createPressedKeys.svelte';
 
 const CAPTURE_WINDOW_MS = 300; // Time to wait for additional keys in a combination
+const MOUSE_CLICK_GRACE_MS = 100; // Ignore mouse0 within this window after start
 
 /**
  * Creates a keyboard shortcut recorder that captures key combinations
@@ -33,6 +34,7 @@ export function createKeyRecorder({
 	let isListening = $state(false);
 	const capturedKeys = new Set<KeyboardEventSupportedKey>();
 	let captureWindowTimer: NodeJS.Timeout | null = null;
+	let startTimestamp = 0;
 
 	// Helper: Clear the capture window timer
 	function clearCaptureTimer() {
@@ -68,9 +70,14 @@ export function createKeyRecorder({
 			return;
 		}
 
-		// Track new keys
+		// Track new keys, ignoring mouse0 within the grace period after start
+		// to avoid capturing the click that initiated recording
+		const inGracePeriod =
+			Date.now() - startTimestamp < MOUSE_CLICK_GRACE_MS;
+
 		let hasNewKeys = false;
 		for (const key of pressedKeys.current) {
+			if (key === 'mouse0' && inGracePeriod) continue;
 			if (!capturedKeys.has(key)) {
 				capturedKeys.add(key);
 				hasNewKeys = true;
@@ -98,6 +105,7 @@ export function createKeyRecorder({
 			isListening = true;
 			capturedKeys.clear();
 			clearCaptureTimer();
+			startTimestamp = Date.now();
 		},
 		stop() {
 			isListening = false;

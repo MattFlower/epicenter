@@ -17,9 +17,12 @@ import {
 	type AcceleratorKeyCode,
 	type AcceleratorModifier,
 	FUNCTION_KEY_PATTERN,
+	isMouseToken,
 	KEYBOARD_EVENT_SPECIAL_KEY_TO_ACCELERATOR_KEY_CODE_MAP,
 	type KeyboardEventSupportedKey,
+	shortcutContainsMouse,
 } from '$lib/constants/keyboard';
+import { GlobalMouseShortcutManagerLive } from './global-mouse-shortcut-manager';
 
 const { InvalidAcceleratorError, InvalidAcceleratorErr } = createTaggedError(
 	'InvalidAcceleratorError',
@@ -41,7 +44,8 @@ type GlobalShortcutServiceError = ReturnType<typeof GlobalShortcutServiceError>;
  */
 export type Accelerator = string & Brand<'Accelerator'>;
 
-export const GlobalShortcutManagerLive = {
+/** Internal keyboard-only global shortcut manager (Tauri plugin). */
+const GlobalKeyboardShortcutManagerLive = {
 	async register({
 		accelerator,
 		callback,
@@ -54,7 +58,7 @@ export const GlobalShortcutManagerLive = {
 		Result<void, InvalidAcceleratorError | GlobalShortcutServiceError>
 	> {
 		const { error: unregisterError } =
-			await GlobalShortcutManagerLive.unregister(accelerator);
+			await GlobalKeyboardShortcutManagerLive.unregister(accelerator);
 		if (unregisterError) return Err(unregisterError);
 
 		if (!isValidElectronAccelerator(accelerator)) {
@@ -88,11 +92,6 @@ export const GlobalShortcutManagerLive = {
 		return Ok(undefined);
 	},
 
-	/**
-	 * Unregisters a global shortcut by ID.
-	 * This function is idempotent - it can be safely called even if the shortcut
-	 * with the given ID doesn't exist or has already been unregistered.
-	 */
 	async unregister(
 		accelerator: Accelerator,
 	): Promise<Result<void, GlobalShortcutServiceError>> {
@@ -110,11 +109,6 @@ export const GlobalShortcutManagerLive = {
 		return Ok(undefined);
 	},
 
-	/**
-	 * Unregisters all global shortcuts.
-	 * This function is idempotent - it can be safely called even if no shortcuts
-	 * are currently registered.
-	 */
 	async unregisterAll(): Promise<Result<void, GlobalShortcutServiceError>> {
 		const { error: unregisterAllError } = await tryAsync({
 			try: () => tauriUnregisterAll(),
@@ -124,6 +118,55 @@ export const GlobalShortcutManagerLive = {
 				}),
 		});
 		if (unregisterAllError) return Err(unregisterAllError);
+		return Ok(undefined);
+	},
+};
+
+/**
+ * Unified global shortcut manager.
+ * Routes mouse-containing shortcuts to the rdev-based mouse manager
+ * and keyboard-only shortcuts to the Tauri global-shortcut plugin.
+ */
+export const GlobalShortcutManagerLive = {
+	async register({
+		accelerator,
+		callback,
+		on,
+	}: {
+		accelerator: Accelerator;
+		callback: (state: ShortcutEventState) => void;
+		on: ShortcutEventState[];
+	}): Promise<
+		Result<void, InvalidAcceleratorError | GlobalShortcutServiceError>
+	> {
+		if (shortcutContainsMouse(accelerator)) {
+			return GlobalMouseShortcutManagerLive.register({
+				shortcutString: accelerator,
+				callback,
+				on,
+			});
+		}
+		return GlobalKeyboardShortcutManagerLive.register({
+			accelerator,
+			callback,
+			on,
+		});
+	},
+
+	async unregister(
+		accelerator: Accelerator,
+	): Promise<Result<void, GlobalShortcutServiceError>> {
+		if (shortcutContainsMouse(accelerator)) {
+			return GlobalMouseShortcutManagerLive.unregister(accelerator);
+		}
+		return GlobalKeyboardShortcutManagerLive.unregister(accelerator);
+	},
+
+	async unregisterAll(): Promise<Result<void, GlobalShortcutServiceError>> {
+		const keyboardResult =
+			await GlobalKeyboardShortcutManagerLive.unregisterAll();
+		await GlobalMouseShortcutManagerLive.unregisterAll();
+		if (keyboardResult.error) return keyboardResult;
 		return Ok(undefined);
 	},
 };
@@ -161,11 +204,34 @@ export function isValidElectronAccelerator(accelerator: string): boolean {
 }
 
 /**
- * Convert pressed keys directly to Tauri accelerator format
+ * Convert pressed keys directly to Tauri accelerator format.
+ * When the combination contains a mouse button token, produces a
+ * lowercase shortcut string (e.g. `"control+mouse4"`) instead of
+ * a Tauri/Electron accelerator since the native plugin can't handle mice.
  */
 export function pressedKeysToTauriAccelerator(
 	pressedKeys: KeyboardEventSupportedKey[],
 ): Result<Accelerator, InvalidAcceleratorError> {
+	// Mouse shortcut path: build a lowercase shortcut string
+	const hasMouseKey = pressedKeys.some((k) => isMouseToken(k));
+	if (hasMouseKey) {
+		const mouseTokens = pressedKeys.filter((k) => isMouseToken(k));
+		const modifierTokens = pressedKeys.filter(
+			(k) => !isMouseToken(k),
+		);
+
+		if (mouseTokens.length === 0) {
+			return InvalidAcceleratorErr({
+				message: 'No mouse button found in pressed keys',
+			});
+		}
+
+		// Build shortcut string: modifiers first, then mouse token(s)
+		const parts = [...modifierTokens, ...mouseTokens];
+		return Ok(parts.join('+') as Accelerator);
+	}
+
+	// Keyboard-only path: original Electron accelerator conversion
 	const modifiers: AcceleratorModifier[] = [];
 	const keyCodes: AcceleratorKeyCode[] = [];
 

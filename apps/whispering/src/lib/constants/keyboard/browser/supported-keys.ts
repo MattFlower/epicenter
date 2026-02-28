@@ -219,6 +219,32 @@ export const KEYBOARD_EVENT_SUPPORTED_KEY_SECTIONS = [
 			'zoomin',
 		] as const satisfies KeyboardEventPossibleKey[],
 	},
+	{
+		title: 'Mouse Buttons',
+		description: 'Mouse buttons (including gaming mice)',
+		keys: [
+			'mouse0',
+			'mouse1',
+			'mouse2',
+			'mouse3',
+			'mouse4',
+			'mouse5',
+			'mouse6',
+			'mouse7',
+			'mouse8',
+			'mouse9',
+			'mouse10',
+			'mouse11',
+			'mouse12',
+			'mouse13',
+			'mouse14',
+			'mouse15',
+			'mouse16',
+			'mouse17',
+			'mouse18',
+			'mouse19',
+		] as const satisfies KeyboardEventPossibleKey[],
+	},
 ] as const;
 
 /**
@@ -237,6 +263,7 @@ export const KEYBOARD_EVENT_SUPPORTED_KEYS = [
 	...KEYBOARD_EVENT_SUPPORTED_KEY_SECTIONS[8].keys, // Special
 	...KEYBOARD_EVENT_SUPPORTED_KEY_SECTIONS[9].keys, // Media
 	...KEYBOARD_EVENT_SUPPORTED_KEY_SECTIONS[10].keys, // Other
+	...KEYBOARD_EVENT_SUPPORTED_KEY_SECTIONS[11].keys, // Mouse Buttons
 ] as const satisfies (typeof KEYBOARD_EVENT_SUPPORTED_KEY_SECTIONS)[number]['keys'][number][];
 
 export type KeyboardEventSupportedKey =

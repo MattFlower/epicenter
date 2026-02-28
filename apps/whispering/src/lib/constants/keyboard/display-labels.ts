@@ -1,4 +1,5 @@
 import type { KeyboardEventSupportedKey } from './browser/supported-keys';
+import { isMouseToken } from './mouse';
 import { FUNCTION_KEY_PATTERN } from './patterns';
 
 /**
@@ -80,6 +81,28 @@ const BROWSER_KEY_DISPLAY_LABELS: Partial<
 	select: 'Select',
 	zoomout: 'Zoom Out',
 	zoomin: 'Zoom In',
+
+	// Mouse buttons
+	mouse0: 'Left Click',
+	mouse1: 'Middle Click',
+	mouse2: 'Right Click',
+	mouse3: 'Mouse 4 (Back)',
+	mouse4: 'Mouse 5 (Forward)',
+	mouse5: 'Mouse 6',
+	mouse6: 'Mouse 7',
+	mouse7: 'Mouse 8',
+	mouse8: 'Mouse 9',
+	mouse9: 'Mouse 10',
+	mouse10: 'Mouse 11',
+	mouse11: 'Mouse 12',
+	mouse12: 'Mouse 13',
+	mouse13: 'Mouse 14',
+	mouse14: 'Mouse 15',
+	mouse15: 'Mouse 16',
+	mouse16: 'Mouse 17',
+	mouse17: 'Mouse 18',
+	mouse18: 'Mouse 19',
+	mouse19: 'Mouse 20',
 };
 
 /**
@@ -108,6 +131,12 @@ export function getShortcutDisplayLabel(shortcut: string | null): string {
 function formatKeyForDisplay(key: string): string {
 	const label = BROWSER_KEY_DISPLAY_LABELS[key as KeyboardEventSupportedKey];
 	if (label) return label;
+
+	// Mouse buttons not in the static map (e.g. mouse20+)
+	if (isMouseToken(key)) {
+		const num = Number(key.slice(5));
+		return `Mouse ${num + 1}`;
+	}
 
 	// Single letters: uppercase
 	if (key.length === 1 && key >= 'a' && key <= 'z') {
