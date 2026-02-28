@@ -2,7 +2,7 @@
  * CLI Tests
  *
  * These tests verify that the CLI entry point correctly dispatches
- * commands and handles the two-mode (serve vs HTTP client) architecture.
+ * commands via command groups (workspace, local, remote, auth, data).
  */
 import { describe, expect, test } from 'bun:test';
 import { createCLI } from './cli';

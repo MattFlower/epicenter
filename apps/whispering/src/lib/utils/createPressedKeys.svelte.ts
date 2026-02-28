@@ -3,6 +3,7 @@ import {
 	isSupportedKey,
 	type KeyboardEventPossibleKey,
 	type KeyboardEventSupportedKey,
+	mouseButtonToToken,
 	normalizeOptionKeyCharacter,
 } from '$lib/constants/keyboard';
 import { IS_MACOS } from '$lib/constants/platform';
@@ -111,6 +112,28 @@ export function createPressedKeys({
 			pressedKeys = pressedKeys.filter((k) => k !== key);
 		});
 
+		// Mouse button support: mousedown adds a mouse token to pressedKeys
+		const mousedown = on(window, 'mousedown', (e) => {
+			if (preventDefault) {
+				e.preventDefault();
+			}
+			const token = mouseButtonToToken(
+				e.button,
+			) as KeyboardEventSupportedKey;
+			if (!isSupportedKey(token as KeyboardEventPossibleKey)) return;
+			if (!pressedKeys.includes(token)) {
+				pressedKeys.push(token);
+			}
+		});
+
+		// Mouse button support: mouseup removes the mouse token
+		const mouseup = on(window, 'mouseup', (e) => {
+			const token = mouseButtonToToken(
+				e.button,
+			) as KeyboardEventSupportedKey;
+			pressedKeys = pressedKeys.filter((k) => k !== token);
+		});
+
 		// Handle window blur events (switching applications, clicking outside browser)
 		// Reset all keys when user shifts focus away from the window
 		const blur = on(window, 'blur', () => {
@@ -130,6 +153,8 @@ export function createPressedKeys({
 			pressedKeys = [];
 			keydown();
 			keyup();
+			mousedown();
+			mouseup();
 			blur();
 			visibilityChange();
 		};

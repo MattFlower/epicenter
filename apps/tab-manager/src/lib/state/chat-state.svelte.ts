@@ -52,7 +52,7 @@ import {
 } from '$lib/ai/providers';
 import { TAB_MANAGER_SYSTEM_PROMPT } from '$lib/ai/system-prompt';
 import { toUiMessage } from '$lib/ai/ui-message';
-import { getHubServerUrl } from '$lib/state/settings';
+import { getRemoteServerUrl } from '$lib/state/settings';
 import {
 	actionContext,
 	type ChatMessageId,
@@ -78,19 +78,19 @@ const DEFAULT_STREAM_STATE: StreamState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hub Server URL Cache
+// Remote Server URL Cache
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Cached hub server URL for synchronous access.
+ * Cached remote server URL for synchronous access.
  *
  * `fetchServerSentEvents` requires a synchronous URL getter (`string | (() => string)`).
  * We initialize with the default and update asynchronously from settings.
- * AI chat routes through the hub server (auth + AI + keys), not the local server.
+ * AI chat routes through the remote server (auth + AI + keys), not the local server.
  */
-let hubUrlCache = 'http://127.0.0.1:3913';
-void getHubServerUrl().then((url) => {
-	hubUrlCache = url;
+let remoteServerUrlCache = 'http://127.0.0.1:3913';
+void getRemoteServerUrl().then((url) => {
+	remoteServerUrlCache = url;
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ function createAiChatState() {
 			initialMessages,
 			tools: actionContext.tools,
 			connection: fetchServerSentEvents(
-				() => `${hubUrlCache}/ai/chat`,
+				() => `${remoteServerUrlCache}/ai/chat`,
 				async () => {
 					const conv = conversations.find((c) => c.id === conversationId);
 					return {

@@ -2,7 +2,7 @@
  * Yjs Awareness-based server discovery.
  *
  * Devices discover each other by connecting to a shared discovery room
- * (`_epicenter_discovery`) on the hub's sync layer. Each device sets
+ * (`_epicenter_discovery`) on the remote server's sync layer. Each device sets
  * its local Awareness state with capabilities and connection info.
  *
  * No dedicated HTTP endpoints needed — discovery piggybacks on the
@@ -13,7 +13,7 @@
  * // On local server boot — broadcast presence to discovery room
  * import { WebsocketProvider } from '@epicenter/sync';
  *
- * const provider = new WebsocketProvider(hubUrl, DISCOVERY_ROOM_ID, doc);
+ * const provider = new WebsocketProvider(remoteUrl, DISCOVERY_ROOM_ID, doc);
  * provider.awareness.setLocalState(createLocalPresence({
  *   url: 'http://192.168.1.100:3913',
  *   deviceId: 'device_abc123',
@@ -30,7 +30,7 @@
 /**
  * The shared room ID used for device discovery.
  *
- * All devices connect to this room on the hub's sync layer.
+ * All devices connect to this room on the remote server's sync layer.
  * The room is created on demand (first connection) and
  * lives as long as any participant is connected.
  */
@@ -97,7 +97,7 @@ export type DiscoveryState = {
 /**
  * Create an Awareness state for a local server device.
  *
- * Used when the local server boots and connects to the hub's discovery room.
+ * Used when the local server boots and connects to the remote server's discovery room.
  *
  * @example
  * ```typescript

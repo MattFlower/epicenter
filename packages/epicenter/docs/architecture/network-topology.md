@@ -1,6 +1,6 @@
 # Network Topology
 
-> **Status note:** This document describes the local-mesh topology used for same-machine and same-network sync (Phase 3). The full three-tier architecture adds a **hub server** (`createHubServer`) as an additional tier above the local servers. The hub handles auth (Better Auth), AI streaming, AI proxy, and a cross-device Yjs relay (ephemeral, schema-agnostic Y.Docs). Cross-device sync via the hub (local servers connecting to hub as Yjs peers) is Phase 4 and not yet wired. The local-mesh topology described here remains accurate for the local sidecar and SPA interaction.
+> **Status note:** This document describes the local-mesh topology used for same-machine and same-network sync (Phase 3). The full three-tier architecture adds a **remote server** (`createRemoteServer`) as an additional tier above the local servers. The remote server handles auth (Better Auth), AI streaming, AI proxy, and a cross-device Yjs relay (ephemeral, schema-agnostic Y.Docs). Cross-device sync via the remote server (local servers connecting to remote server as Yjs peers) is Phase 4 and not yet wired. The local-mesh topology described here remains accurate for the local sidecar and SPA interaction.
 
 Epicenter uses a **leaderless, bidirectional graph** topology for syncing data across devices. This document describes the node types, connection rules, and example configurations.
 

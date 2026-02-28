@@ -6,48 +6,24 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./sync": "./src/sync/index.ts",
-		"./workspace": "./src/workspace/index.ts",
-		"./ai": "./src/ai/index.ts",
-		"./auth": "./src/auth/index.ts",
-		"./keys": "./src/keys/index.ts",
-		"./discovery": "./src/discovery/index.ts",
-		"./proxy": "./src/proxy/index.ts",
-		"./opencode": "./src/opencode/index.ts"
+		"./discovery": "./src/discovery/index.ts"
 	},
 	"license": "AGPL-3.0",
 	"scripts": {
-		"start": "bun src/start-hub.ts",
-		"start:hub": "bun src/start-hub.ts",
-		"start:local": "bun src/start-local.ts",
-		"dev": "bun src/start-hub.ts",
-		"dev:hub": "bun src/start-hub.ts",
-		"dev:local": "bun src/start-local.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@elysiajs/cors": "^1.4.1",
-		"@elysiajs/openapi": "^1.4.11",
-		"@tanstack/ai": "^0.5.1",
-		"@tanstack/ai-anthropic": "^0.5.0",
-		"@tanstack/ai-gemini": "^0.5.0",
-		"@tanstack/ai-grok": "^0.5.0",
-		"@tanstack/ai-openai": "^0.5.0",
-		"better-auth": "^1.4.19",
 		"elysia": "^1.2.25",
 		"lib0": "catalog:",
-		"typebox": "catalog:",
 		"wellcrafted": "catalog:",
 		"y-protocols": "catalog:"
 	},
 	"peerDependencies": {
-		"@epicenter/workspace": "workspace:*",
 		"yjs": "catalog:"
 	},
 	"devDependencies": {
 		"@epicenter/sync": "workspace:*",
-		"@epicenter/tab-manager": "workspace:*",
 		"@types/bun": "catalog:",
-		"arktype": "catalog:",
 		"typescript": "catalog:"
 	}
 }

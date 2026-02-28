@@ -221,6 +221,28 @@ const KEYBOARD_EVENT_POSSIBLE_KEYS = [
 	'previouscandidate',
 	'singlecandidate',
 
+	// Mouse buttons
+	'mouse0',
+	'mouse1',
+	'mouse2',
+	'mouse3',
+	'mouse4',
+	'mouse5',
+	'mouse6',
+	'mouse7',
+	'mouse8',
+	'mouse9',
+	'mouse10',
+	'mouse11',
+	'mouse12',
+	'mouse13',
+	'mouse14',
+	'mouse15',
+	'mouse16',
+	'mouse17',
+	'mouse18',
+	'mouse19',
+
 	// Additional keys
 	'allcandidates',
 	'hankaku',

@@ -23,6 +23,8 @@ use graceful_shutdown::send_sigint;
 pub mod command;
 use command::{execute_command, spawn_command};
 
+pub mod global_mouse;
+
 pub mod markdown_reader;
 use markdown_reader::{bulk_delete_files, count_markdown_files, read_markdown_files};
 
@@ -176,6 +178,10 @@ pub async fn run() {
     let app = builder
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
+
+    // Start the global mouse listener for mouse-button shortcuts.
+    // Runs for the lifetime of the app; requires Input Monitoring on macOS.
+    global_mouse::start_global_mouse_listener(app.handle().clone());
 
     app.run(|handler, event| {
         // Only track events if Aptabase is enabled (key is not empty)

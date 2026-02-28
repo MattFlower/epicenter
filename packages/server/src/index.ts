@@ -1,14 +1,4 @@
 export {
-	type AuthPluginConfig,
-	createAuthPlugin,
-	createBetterAuth,
-} from './auth';
-export {
-	createHubSessionValidator,
-	type HubSessionValidatorConfig,
-	type SessionValidationResult,
-} from './auth/local-auth';
-export {
 	createClientPresence,
 	createLocalPresence,
 	type DeviceCapability,
@@ -17,21 +7,12 @@ export {
 	type DiscoveryState,
 	getDiscoveredDevices,
 } from './discovery';
-export { createHubServer, type HubServerConfig } from './hub';
 export {
-	createLocalServer,
-	type LocalApp,
-	type LocalServerConfig,
-} from './local';
-export {
-	createOpenCodeProcess,
-	type GenerateConfigOptions,
-	generateOpenCodeConfig,
-	generateOpenCodeConfigContent,
-	type OpenCodeConfig,
-	type OpenCodeProcess,
-	type OpenCodeProcessConfig,
-} from './opencode';
-export { createProxyPlugin, type ProxyPluginConfig } from './proxy';
+	isSupportedProvider,
+	PROVIDER_ENV_VARS,
+	SUPPORTED_PROVIDERS,
+	type SupportedProvider,
+} from './providers';
 export { DEFAULT_PORT, listenWithFallback } from './server';
-export { createWorkspacePlugin } from './workspace';
+export { createSyncPlugin, type SyncPluginConfig } from './sync';
+export { type AuthConfig } from './sync/auth';

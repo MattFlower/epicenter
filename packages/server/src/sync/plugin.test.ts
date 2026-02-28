@@ -16,7 +16,7 @@ import type { SyncProvider, SyncStatus } from '@epicenter/sync';
 import { createSyncProvider } from '@epicenter/sync';
 import { Elysia } from 'elysia';
 import * as Y from 'yjs';
-import { createLocalServer, type LocalServerConfig } from '../local';
+import type { AuthConfig } from './auth';
 import { createSyncPlugin } from './plugin';
 
 // ============================================================================
@@ -33,18 +33,24 @@ function uniqueRoom(): string {
 /**
  * Start a test server on a random port (port 0).
  *
- * Returns the server instance plus URL helpers for building
- * WebSocket and HTTP URLs against the actual bound port.
+ * Uses the sync plugin directly (no createLocalServer dependency)
+ * to keep @epicenter/server free of cyclic deps.
  */
-function startTestServer(syncConfig?: LocalServerConfig['sync']) {
-	const server = createLocalServer({ clients: [], sync: syncConfig, port: 0 });
-	const bunServer = server.start();
-	if (!bunServer) {
+function startTestServer(syncConfig?: { auth?: AuthConfig }) {
+	const app = new Elysia()
+		.use(new Elysia({ prefix: '/rooms' }).use(createSyncPlugin(syncConfig)))
+		.get('/', () => ({ status: 'ok' }));
+	app.listen(0);
+	if (!app.server) {
 		throw new Error('Failed to start test server');
 	}
-	const port = bunServer.port;
+	const port = app.server.port;
 	return {
-		server,
+		server: {
+			async stop() {
+				app.stop();
+			},
+		},
 		port,
 		wsUrl(room: string) {
 			return `ws://localhost:${port}/rooms/${room}`;
@@ -211,16 +217,10 @@ describe('sync plugin integration', () => {
 		await ctx.server.stop();
 	});
 
-	test('discovery endpoint returns API info', async () => {
+	test('health endpoint returns status', async () => {
 		const res = await fetch(ctx.httpUrl('/'));
 		const body = await res.json();
-		expect(body).toEqual({
-			name: 'Epicenter Local',
-			version: '1.0.0',
-			mode: 'local',
-			workspaces: [],
-			actions: [],
-		});
+		expect(body).toEqual({ status: 'ok' });
 	});
 
 	test('two clients sync document updates', async () => {

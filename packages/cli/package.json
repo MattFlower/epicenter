@@ -7,8 +7,8 @@
 		"epicenter": "./src/bin.ts"
 	},
 	"dependencies": {
-		"@elysiajs/eden": "^1.4.8",
-		"@epicenter/server": "workspace:*",
+		"@epicenter/server-local": "workspace:*",
+		"@epicenter/server-remote": "workspace:*",
 		"@epicenter/workspace": "workspace:*",
 		"jsrepo": "^3.6.1",
 		"typebox": "catalog:",

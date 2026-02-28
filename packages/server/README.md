@@ -1,13 +1,13 @@
 # Epicenter Server
 
-Two server constructors — `createHubServer` and `createLocalServer` — implementing a three-tier topology where all workspace knowledge lives on local servers and the hub knows nothing about workspace schemas.
+Two server constructors — `createRemoteServer` and `createLocalServer` — implementing a three-tier topology where all workspace knowledge lives on local servers and the remote server knows nothing about workspace schemas.
 
 ## Three-Tier Topology
 
 ```
-Hub Server (cloud)
+Remote Server (cloud)
   - Better Auth (sessions, JWT, JWKS)
-  - AI proxy (injects env var API keys, keys never leave hub)
+  - AI proxy (injects env var API keys, keys never leave remote server)
   - AI streaming (SSE chat for all providers via /ai/chat)
   - Yjs relay (/rooms — EPHEMERAL Y.Docs, pure relay, NO persistence)
 
@@ -23,7 +23,7 @@ Local Server A (Device 1)          Local Server B (Device 2)
   - Actions                          - Actions
   - Persisted Y.Docs                 - Persisted Y.Docs
   - Local Yjs relay (SPA <-> Y.Doc)  - Local Yjs relay (SPA <-> Y.Doc)
-  - Validates auth against hub       - Validates auth against hub
+  - Validates auth against remote     - Validates auth against remote
 
   Does NOT have: AI streaming, auth issuance, API keys
 
@@ -37,21 +37,21 @@ SPA / WebView A                    SPA / WebView B
 ### Sync Scopes
 
 1. **Local relay** (`/rooms` on local server): SPA Y.Doc <-> server's persisted Y.Doc, same machine, sub-millisecond latency.
-2. **Hub relay** (`/rooms` on hub): cross-device sync between local servers (Phase 4, enabled with `--hub` flag).
+2. **Remote relay** (`/rooms` on remote server): cross-device sync between local servers (Phase 4, enabled with `--hub` flag).
 
 ### Auth Flow
 
-Hub issues sessions via Better Auth. Local servers validate tokens by calling the hub's `/auth/get-session` — they never issue sessions themselves.
+The remote server issues sessions via Better Auth. Local servers validate tokens by calling the remote server's `/auth/get-session` — they never issue sessions themselves.
 
 ### AI Flow
 
-All AI requests go to the hub's `/ai/chat`. The hub injects API keys from its environment and streams back to the caller. API keys never leave the hub.
+All AI requests go to the remote server's `/ai/chat`. The remote server injects API keys from its environment and streams back to the caller. API keys never leave the remote server.
 
 ---
 
-## Hub Server
+## Remote Server
 
-The hub is a stateless coordination layer. Its Y.Docs are ephemeral and schema-agnostic — it has no knowledge of what data those documents contain. Workspace schemas, table definitions, and business logic live entirely on local servers.
+The remote server is a stateless coordination layer. Its Y.Docs are ephemeral and schema-agnostic — it has no knowledge of what data those documents contain. Workspace schemas, table definitions, and business logic live entirely on local servers.
 
 **What it does:**
 - Issues and validates sessions (Better Auth, JWT, JWKS endpoint)
@@ -66,13 +66,13 @@ The hub is a stateless coordination layer. Its Y.Docs are ephemeral and schema-a
 - Issue commands to local servers
 
 ```typescript
-import { createHubServer } from '@epicenter/server';
+import { createRemoteServer } from '@epicenter/server';
 
-const hub = createHubServer({ port: 3914 });
-hub.start();
+const remote = createRemoteServer({ port: 3914 });
+remote.start();
 ```
 
-### Hub Routes
+### Remote Server Routes
 
 ```
 /                        - Discovery root
@@ -83,10 +83,10 @@ hub.start();
 /proxy/{provider}/*      - AI provider proxy (env var keys)
 ```
 
-### Hub Config
+### Remote Server Config
 
 ```typescript
-type HubServerConfig = {
+type RemoteServerConfig = {
   /** Port to listen on. Defaults to 3913 (or PORT env var). */
   port?: number;
   /** Better Auth configuration for session-based auth. */
@@ -112,12 +112,12 @@ The local server is where all workspace knowledge lives. It owns the persisted Y
 - Runs workspace actions
 - Hosts extensions (e.g. filesystem projections)
 - Relays Yjs between the SPA and local Y.Doc (`/rooms`)
-- Validates auth tokens by calling the hub
+- Validates auth tokens by calling the remote server
 
 **What it does NOT do:**
 - Issue sessions or JWTs
 - Hold AI API keys or stream AI responses
-- Run cross-device sync directly (that goes through the hub)
+- Run cross-device sync directly (that goes through the remote server)
 
 ```typescript
 import { defineWorkspace, createWorkspace, id, text } from '@epicenter/workspace/static';
@@ -135,7 +135,7 @@ const blogClient = createWorkspace(blogWorkspace);
 const server = createLocalServer({
   clients: [blogClient],
   port: 3913,
-  hubUrl: 'https://hub.example.com', // omit for open/dev mode
+  hubUrl: 'https://remote.example.com', // omit for open/dev mode
 });
 server.start();
 ```
@@ -166,7 +166,7 @@ type LocalServerConfig = {
   clients: AnyWorkspaceClient[];
   /** Port to listen on. Defaults to 3913 (or PORT env var). */
   port?: number;
-  /** Hub URL for session token validation. Omit for open mode. */
+  /** Remote server URL for session token validation. Omit for open mode. */
   hubUrl?: string;
   /** CORS allowed origins. Default: ['tauri://localhost'] */
   allowedOrigins?: string[];
@@ -195,7 +195,7 @@ await server.stop(); // Stop server and clean up resources
 
 ## WebSocket Sync Protocol
 
-Clients connect to `/rooms/{workspaceId}` on either the local or hub server. The recommended client is `createSyncExtension` from `@epicenter/workspace/extensions/sync`:
+Clients connect to `/rooms/{workspaceId}` on either the local or remote server. The recommended client is `createSyncExtension` from `@epicenter/workspace/extensions/sync`:
 
 ```typescript
 import { createSyncExtension } from '@epicenter/workspace/extensions/sync';
@@ -220,7 +220,7 @@ The sync plugin implements the y-websocket protocol with one custom extension:
 
 ### Room Eviction
 
-When the last client disconnects, a 60-second eviction timer starts. If no client reconnects in that window, the room is destroyed. On the hub, this means the Y.Doc is gone permanently — it has no backing storage.
+When the last client disconnects, a 60-second eviction timer starts. If no client reconnects in that window, the room is destroyed. On the remote server, this means the Y.Doc is gone permanently — it has no backing storage.
 
 ---
 
@@ -234,7 +234,7 @@ createLocalServer()
 ├── Workspace Plugin   → /workspaces/:id/...    (REST CRUD + actions)
 └── CORS + Auth        (Tauri-only protection)
 
-createHubServer()
+createRemoteServer()
 ├── Sync Plugin        → /rooms/:room           (cross-device relay, ephemeral)
 ├── AI Plugin          → /ai/...                (streaming)
 ├── Auth Plugin        → /auth/...              (Better Auth)
@@ -298,7 +298,7 @@ await fetch('http://localhost:3913/workspaces/blog/tables/posts', {
 ## CLI
 
 ```bash
-# Start hub server (sync relay + AI + auth)
+# Start remote server (sync relay + AI + auth)
 bun run src/start-hub.ts
 
 # Start local server (sync relay + workspace CRUD)
